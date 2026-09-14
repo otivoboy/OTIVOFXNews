@@ -1,0 +1,6 @@
+{
+  "name": "OTIVO FX News",
+  "description": "Always-on institutional macro intelligence dashboard integrating economic calendars, spot prices, yields, and multi-market confirmation engines with asset bias matrix.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

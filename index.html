@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en" class="dark w-full min-h-screen bg-[#030712]">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content, viewport-fit=cover" />
+    <title>OTIVO FX News</title>
+    <meta name="description" content="Always-on institutional macro intelligence dashboard integrating economic calendars, spot prices, yields, and multi-market confirmation engines with asset bias matrix." />
+    <meta property="og:title" content="OTIVO FX News" />
+    <meta property="og:description" content="Always-on institutional macro intelligence dashboard integrating economic calendars, spot prices, yields, and multi-market confirmation engines with asset bias matrix." />
+    <meta property="og:type" content="website" />
+    <!-- Google Fonts for Macro Editorial & UI Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      #preloader-root {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-color: #030712;
+        background-image: 
+            radial-gradient(at 50% 50%, rgba(16, 185, 129, 0.08) 0, transparent 50%),
+            radial-gradient(at 0% 0%, rgba(239, 68, 68, 0.05) 0, transparent 50%),
+            linear-gradient(rgba(255, 255, 255, 0.007) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.007) 1px, transparent 1px);
+        background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        overflow: hidden;
+        transition: opacity 0.65s cubic-bezier(0.4, 0, 0.2, 1), transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+        will-change: opacity;
+      }
+      #preloader-root.fade-out {
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transform: scale(1.02);
+      }
+
+      .p-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+      }
+
+      .p-absolute {
+        position: absolute;
+      }
+
+      .p-inline-block {
+        display: inline-block;
+        filter: drop-shadow(0 0 8px var(--glow-color, rgba(16, 185, 129, 0.4)));
+        transition: filter 0.3s ease;
+      }
+
+      .p-loader {
+        display: flex;
+        margin: 0.25em 0;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+      }
+
+      .p-dash {
+        animation: pDashArray 2.5s ease-in-out infinite,
+                   pDashOffset 2.5s linear infinite;
+      }
+
+      .p-spin {
+        animation: pSpinDashArray 2s ease-in-out infinite,
+                   pSpin 6s cubic-bezier(0.4, 0, 0.2, 1) infinite,
+                   pDashOffset 2s linear infinite;
+        transform-origin: center;
+      }
+
+      .p-pulse-slow {
+        animation: pSubtlePulse 3s ease-in-out infinite;
+      }
+
+      @keyframes pSubtlePulse {
+        0%, 100% { transform: scale(1); opacity: 0.9; }
+        50% { transform: scale(1.05); opacity: 1; }
+      }
+
+      @keyframes pDashArray {
+        0% {
+          stroke-dasharray: 0 1 359 0;
+        }
+        50% {
+          stroke-dasharray: 0 180 180 0;
+        }
+        100% {
+          stroke-dasharray: 359 1 0 0;
+        }
+      }
+
+      @keyframes pSpinDashArray {
+        0% {
+          stroke-dasharray: 270 90;
+        }
+        50% {
+          stroke-dasharray: 90 270;
+        }
+        100% {
+          stroke-dasharray: 270 90;
+        }
+      }
+
+      @keyframes pDashOffset {
+        0% {
+          stroke-dashoffset: 360;
+        }
+        100% {
+          stroke-dashoffset: 0;
+        }
+      }
+
+      @keyframes pSpin {
+        0% {
+          transform: rotate(0deg);
+        }
+        25% {
+          transform: rotate(180deg);
+        }
+        50% {
+          transform: rotate(360deg);
+        }
+        75% {
+          transform: rotate(540deg);
+        }
+        100% {
+          transform: rotate(720deg);
+        }
+      }
+
+      .p-brand-caption {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 5px;
+        text-transform: uppercase;
+        color: #9ca3af;
+        opacity: 0.8;
+      }
+
+      .p-brand-caption .accent-bull {
+        color: #10b981;
+        text-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+      }
+
+      .p-brand-caption .accent-bear {
+        color: #ef4444;
+        text-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+      }
+
+      .p-ticker-line {
+        width: 120px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.5), rgba(239, 68, 68, 0.5), transparent);
+      }
+    </style>
+  </head>
+  <body class="bg-[#030712] text-slate-200 min-h-screen w-full m-0 p-0 overflow-x-hidden antialiased">
+    <!-- Initial Instant Preloader -->
+    <div id="preloader-root">
+      <div class="p-container">
+        <div class="p-loader">
+          <!-- Gradients Definitions -->
+          <svg height="0" width="0" viewBox="0 0 64 64" class="p-absolute">
+            <defs>
+              <linearGradient y2="0" x2="1" y1="1" x1="0" id="init-o-forex-grad">
+                <stop stop-color="#10B981" offset="0%"></stop>
+                <stop stop-color="#059669" offset="50%"></stop>
+                <stop stop-color="#34D399" offset="100%"></stop>
+              </linearGradient>
+              
+              <linearGradient y2="0" x2="0" y1="1" x1="0" id="init-t-forex-grad">
+                <stop stop-color="#06B6D4" offset="0%"></stop>
+                <stop stop-color="#22D3EE" offset="100%"></stop>
+              </linearGradient>
+              
+              <linearGradient y2="1" x2="0" y1="0" x1="0" id="init-i-forex-grad">
+                <stop stop-color="#F9FAFB" offset="0%"></stop>
+                <stop stop-color="#9CA3AF" offset="100%"></stop>
+              </linearGradient>
+              
+              <linearGradient y2="0" x2="1" y1="1" x1="0" id="init-v-forex-grad">
+                <stop stop-color="#EF4444" offset="0%"></stop>
+                <stop stop-color="#F87171" offset="100%"></stop>
+              </linearGradient>
+              
+              <linearGradient y2="1" x2="1" y1="0" x1="0" id="init-o2-forex-grad">
+                <stop stop-color="#F59E0B" offset="0%"></stop>
+                <stop stop-color="#10B981" offset="100%"></stop>
+              </linearGradient>
+            </defs>
+          </svg>
+
+          <!-- O - The Market Compass -->
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 64 64" height="64" width="64" class="p-inline-block p-pulse-slow" style="--glow-color: rgba(16, 185, 129, 0.4);">
+            <circle cx="32" cy="32" r="30" stroke="rgba(16, 185, 129, 0.15)" stroke-width="1" stroke-dasharray="4 4"/>
+            <path stroke-linejoin="round" stroke-linecap="round" stroke-width="7" stroke="url(#init-o-forex-grad)" d="M 32 32 m 0 -24 a 24 24 0 1 1 0 48 a 24 24 0 1 1 0 -48" class="p-spin" pathLength="360"></path>
+            <path d="M32 20v5M32 39v5M20 32h5M39 32h5" stroke="rgba(16, 185, 129, 0.4)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+
+          <!-- T - Tech Bar -->
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 64 64" height="64" width="64" class="p-inline-block" style="--glow-color: rgba(6, 182, 212, 0.4);">
+            <path stroke-linejoin="round" stroke-linecap="round" stroke-width="6.5" stroke="url(#init-t-forex-grad)" d="M 12,14 h 40 M 32,14 v 36" class="p-dash" pathLength="360"></path>
+            <path d="M27 22 l5 -5 l5 5" stroke="#22D3EE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+
+          <!-- I - Candlestick Index Chart Column -->
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 64 64" height="64" width="64" class="p-inline-block" style="--glow-color: rgba(249, 250, 251, 0.3);">
+            <path d="M 32,8 v 48" stroke="rgba(249, 250, 251, 0.3)" stroke-width="2" stroke-linecap="round"/>
+            <path stroke-linejoin="round" stroke-linecap="round" stroke-width="9" stroke="url(#init-i-forex-grad)" d="M 32,18 v 28" class="p-dash" pathLength="360"></path>
+          </svg>
+
+          <!-- V - Price Action Velocity Vector -->
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 64 64" height="64" width="64" class="p-inline-block" style="--glow-color: rgba(239, 110, 110, 0.35);">
+            <path stroke-linejoin="round" stroke-linecap="round" stroke-width="6.5" stroke="url(#init-v-forex-grad)" d="M 14,16 l 18,32 l 18,-32" class="p-dash" pathLength="360"></path>
+            <circle cx="32" cy="48" r="3" fill="#EF4444"/>
+          </svg>
+
+          <!-- O2 - Globular Exchange Ring -->
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 64 64" height="64" width="64" class="p-inline-block p-pulse-slow" style="--glow-color: rgba(245, 158, 11, 0.35);">
+            <path stroke-linejoin="round" stroke-linecap="round" stroke-width="6.5" stroke="url(#init-o2-forex-grad)" d="M 32 32 m 0 -19 a 19 19 0 1 1 0 38 a 19 19 0 1 1 0 -38" class="p-spin" pathLength="360"></path>
+            <path d="M26 28a6 6 0 0 1 12-4M38 36a6 6 0 0 1-12 4" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+
+        <div class="p-ticker-line"></div>
+        <div class="p-brand-caption">
+          <span class="accent-bull">▲</span> Forex <span class="accent-bear">▼</span> News
+        </div>
+      </div>
+    </div>
+
+    <div id="root" class="w-full min-h-screen flex flex-col bg-[#070a11]"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

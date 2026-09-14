@@ -1,0 +1,101 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Trader profile and settings including trading style, risk settings, watchlists, notes, and alert preferences",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier matching the Firebase Auth user ID"
+        },
+        "name": {
+          "type": "string",
+          "description": "User display name",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address",
+          "maxLength": 150
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "User avatar image URL",
+          "maxLength": 500
+        },
+        "accountTier": {
+          "type": "string",
+          "description": "Trader tier (e.g. PRO TRADER, INSTITUTIONAL)",
+          "maxLength": 50
+        },
+        "memberSince": {
+          "type": "string",
+          "description": "Month/year the user joined",
+          "maxLength": 50
+        },
+        "registeredAtTimestamp": {
+          "type": "number",
+          "description": "Epoch timestamp in milliseconds of user account registration"
+        },
+        "tradingStyle": {
+          "type": "string",
+          "description": "User trading methodology",
+          "maxLength": 50
+        },
+        "primaryCurrency": {
+          "type": "string",
+          "description": "Base currency for risk calculations",
+          "maxLength": 10
+        },
+        "riskPreference": {
+          "type": "string",
+          "description": "Risk profile per setup",
+          "maxLength": 50
+        },
+        "riskSettings": {
+          "type": "object",
+          "description": "Calculated position sizing and portfolio risk limits"
+        },
+        "watchlists": {
+          "type": "array",
+          "description": "Array of pinned currency pairs or commodities",
+          "items": {
+            "type": "string"
+          }
+        },
+        "notes": {
+          "type": "string",
+          "description": "User macroeconomic notes and trade thesis",
+          "maxLength": 4000
+        },
+        "alerts": {
+          "type": "object",
+          "description": "Notification and alert preferences"
+        },
+        "stats": {
+          "type": "object",
+          "description": "Trading dashboard metrics"
+        },
+        "isVerified": {
+          "type": "boolean",
+          "description": "Whether user authentication is verified"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last updated ISO timestamp",
+          "maxLength": 100
+        }
+      },
+      "required": ["id", "email"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Private user profile and preference settings"
+    }
+  }
+}
