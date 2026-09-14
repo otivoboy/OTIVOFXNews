@@ -701,5 +701,45 @@ export interface MarketSymbol {
   isOpen?: boolean;
 }
 
+export interface NewsItemAnalysis {
+  expectedMove: string;
+  horizon: 'intraday' | '1-3 days' | '1-2 weeks';
+  confidence: number; // 0.0 - 1.0
+  rationale: string;
+  expectedDirection?: {
+    USD?: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
+    EUR?: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
+    JPY?: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
+    GOLD?: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
+    EQUITIES?: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
+    BONDS?: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
+  };
+  tradeIdeas?: string[];
+}
+
+export interface NormalizedNewsItem {
+  id: string;
+  headline: string;
+  summary: string;
+  source: string;
+  sourceType: 'BLOOMBERG' | 'REUTERS' | 'FT' | 'WSJ' | 'CNBC' | 'FOREXLIVE' | 'CENTRAL_BANK' | 'SQUAWK' | 'NEWSAPI' | 'SERPER' | 'RSS' | 'GOOGLE_NEWS_RSS';
+  timestamp: number;
+  url?: string;
+  category: 'BREAKING' | 'CENTRAL_BANK' | 'MACRO_DATA' | 'FLOWS_FX' | 'GEOPOLITICAL';
+  impactSentiment: 'HAWKISH' | 'DOVISH' | 'NEUTRAL' | 'HIGH_VOLATILITY';
+  impactScore: number; // 0 - 100
+  tickers: string[];
+  isFlash?: boolean;
+  analysis?: NewsItemAnalysis;
+}
+
+export interface LiveNewsResponse {
+  source: string;
+  fetchedAt: number;
+  results: NormalizedNewsItem[];
+  cached?: boolean;
+  activeSources?: string[];
+}
+
 
 
