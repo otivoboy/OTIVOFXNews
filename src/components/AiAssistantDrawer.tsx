@@ -613,7 +613,7 @@ export const AiAssistantDrawer: React.FC<AiAssistantDrawerProps> = ({
 
             {/* ai.png Icon with fallback */}
             <img
-              src="/ai.png"
+              src="/logo2.png"
               alt="OTIVO AI"
               className="relative w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow-[0_0_8px_rgba(200,138,75,0.5)] transition-transform duration-300 group-hover:scale-110"
               loading="eager"
@@ -669,7 +669,7 @@ export const AiAssistantDrawer: React.FC<AiAssistantDrawerProps> = ({
             <div className="flex items-center gap-2.5">
               <div className="relative p-1 rounded-xl bg-[#b37446]/20 border border-[#b37446]/40 flex items-center justify-center shrink-0 w-8 h-8">
                 <img
-                  src="/ai.png"
+                  src="/logo2.png"
                   alt="AI"
                   className="w-5 h-5 object-contain"
                   loading="eager"

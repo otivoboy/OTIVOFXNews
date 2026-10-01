@@ -13,11 +13,13 @@ import {
   ArrowRight,
   ShieldCheck,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Layers
 } from 'lucide-react';
 import { EconomicEvent, NormalizedNewsItem } from '../types';
 import { soundManager } from '../utils/audio';
 import { useLiveNews } from '../hooks/useLiveNews';
+import { formatConfidence } from '../utils/directionHelper';
 
 interface LiveRunningNewsFeedProps {
   event: EconomicEvent;
@@ -325,6 +327,17 @@ export const LiveRunningNewsFeed: React.FC<LiveRunningNewsFeedProps> = ({ event 
                         {item.source}
                       </span>
 
+                      {/* Multi-wire confirmation provenance */}
+                      {item.sources && item.sources.length > 1 && (
+                        <span 
+                          className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-sky-50 text-sky-900 border border-sky-300 flex items-center gap-1"
+                          title={`Confirmed across ${item.sources.length} sources: ${item.sources.map(s => s.name).join(', ')}`}
+                        >
+                          <Layers className="w-2.5 h-2.5 text-sky-700" />
+                          {item.sources.length} Wires
+                        </span>
+                      )}
+
                       {item.isFlash && (
                         <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-900 border border-rose-300 animate-pulse">
                           FLASH
@@ -334,21 +347,21 @@ export const LiveRunningNewsFeed: React.FC<LiveRunningNewsFeedProps> = ({ event 
                       {isHawkish && (
                         <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-900 border border-rose-200 flex items-center gap-0.5">
                           <TrendingUp className="w-2.5 h-2.5 text-rose-700" />
-                          HAWKISH {item.impactScore ? `${item.impactScore}%` : ''}
+                          HAWKISH {item.impactScore ? `${formatConfidence(item.impactScore).percent}%` : ''}
                         </span>
                       )}
 
                       {isDovish && (
                         <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-900 border border-emerald-200 flex items-center gap-0.5">
                           <TrendingDown className="w-2.5 h-2.5 text-emerald-700" />
-                          DOVISH {item.impactScore ? `${item.impactScore}%` : ''}
+                          DOVISH {item.impactScore ? `${formatConfidence(item.impactScore).percent}%` : ''}
                         </span>
                       )}
 
                       {isVolatile && (
                         <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200 flex items-center gap-0.5">
                           <Zap className="w-2.5 h-2.5 text-amber-700" />
-                          VOLATILITY {item.impactScore ? `${item.impactScore}%` : ''}
+                          VOLATILITY {item.impactScore ? `${formatConfidence(item.impactScore).percent}%` : ''}
                         </span>
                       )}
 
@@ -360,9 +373,13 @@ export const LiveRunningNewsFeed: React.FC<LiveRunningNewsFeedProps> = ({ event 
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="text-[9px] font-mono text-slate-500 flex items-center gap-1">
+                      <span 
+                        className="text-[9px] font-mono text-slate-500 flex items-center gap-1.5"
+                        title={item.timestampUtc || new Date(item.timestamp).toISOString()}
+                      >
                         <Clock className="w-2.5 h-2.5 text-slate-400" />
-                        {getTimeAgo(item.timestamp)}
+                        <span>{new Date(item.timestamp).toLocaleTimeString('en-US', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit', hour12: false })} UTC</span>
+                        <span className="text-slate-400">({getTimeAgo(item.timestamp)})</span>
                       </span>
 
                       <button
@@ -415,12 +432,12 @@ export const LiveRunningNewsFeed: React.FC<LiveRunningNewsFeedProps> = ({ event 
                             Expected Market Impact:
                           </span>
                           <span className="text-slate-800 font-mono font-medium">
-                            {item.analysis?.expectedMove}
+                            {item.analysis?.structuredMove?.formatted || item.analysis?.expectedMove}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] font-mono text-emerald-900 bg-emerald-100 px-1.5 py-0.2 rounded border border-emerald-300 font-bold">
-                            {Math.round((item.analysis?.confidence || 0.85) * 100)}% Conf
+                            {formatConfidence(item.analysis?.confidence).formatted}
                           </span>
                           {isExpanded ? (
                             <ChevronUp className="w-3.5 h-3.5 text-slate-500" />

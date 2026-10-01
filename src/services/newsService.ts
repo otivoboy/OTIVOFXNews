@@ -1,7 +1,8 @@
 import Parser from 'rss-parser';
 import crypto from 'crypto';
-import { NormalizedNewsItem, NewsItemAnalysis } from '../types';
+import { NormalizedNewsItem, NewsItemAnalysis, NewsSourceAttribution } from '../types';
 import { GoogleGenAI } from '@google/genai';
+import { parseExpectedMove } from '../utils/directionHelper';
 
 const rssParser = new Parser({
   timeout: 7000,
@@ -330,12 +331,14 @@ export function analyzeDeterministic(item: {
   }
 
   const impactScore = Math.min(100, Math.max(35, Math.round(confidence * 100)));
+  const structuredMove = parseExpectedMove(expectedMove);
 
   return {
     category,
     impactSentiment: sentiment,
     impactScore,
     expectedMove,
+    structuredMove,
     horizon,
     confidence,
     rationale,
@@ -646,17 +649,48 @@ export async function fetchAndNormalizeNewsFree(
     combined = generateInstitutionalSeedFeed(query);
   }
 
-  // 2) Deduplicate by exact SHA1 fingerprint
+  // 2) Deduplicate by exact SHA1 fingerprint while preserving multi-source provenance
   const map = new Map<string, NormalizedNewsItem>();
 
   for (const it of combined) {
     if (!it.headline || it.headline.length < 8) continue;
     const id = fingerprint(it.headline, it.url);
-    if (map.has(id)) continue;
+    const itemTimestamp = it.timestamp || now;
+    const initialSource: NewsSourceAttribution = {
+      name: it.source,
+      sourceType: it.sourceType,
+      url: it.url,
+      timestamp: itemTimestamp,
+      authorityRank: getSourceAuthorityWeight(it.sourceType),
+    };
+
+    if (map.has(id)) {
+      const existing = map.get(id)!;
+      if (!existing.sources) {
+        existing.sources = [{
+          name: existing.source,
+          sourceType: existing.sourceType,
+          url: existing.url,
+          timestamp: existing.timestamp,
+          authorityRank: getSourceAuthorityWeight(existing.sourceType),
+        }];
+      }
+      if (!existing.sources.some(s => s.name === it.source && s.sourceType === it.sourceType)) {
+        existing.sources.push(initialSource);
+      }
+      existing.duplicateCount = (existing.duplicateCount || 1) + 1;
+      existing.earliestPublishedAt = Math.min(existing.earliestPublishedAt || existing.timestamp, itemTimestamp);
+      if (getSourceAuthorityWeight(it.sourceType) > getSourceAuthorityWeight(existing.sourceType)) {
+        existing.source = it.source;
+        existing.sourceType = it.sourceType;
+        if (it.url) existing.url = it.url;
+      }
+      continue;
+    }
 
     const analysisResult = analyzeDeterministic(it);
     const tickers = extractTickers(`${it.headline} ${it.summary || ''} ${query}`);
-    const isFlash = analysisResult.category === 'BREAKING' || (now - it.timestamp < 120 * 1000);
+    const isFlash = analysisResult.category === 'BREAKING' || (now - itemTimestamp < 120 * 1000);
 
     map.set(id, {
       id: `news-${id.slice(0, 12)}`,
@@ -664,7 +698,11 @@ export async function fetchAndNormalizeNewsFree(
       summary: it.summary || '',
       source: it.source,
       sourceType: it.sourceType,
-      timestamp: it.timestamp || now,
+      sources: [initialSource],
+      duplicateCount: 1,
+      earliestPublishedAt: itemTimestamp,
+      timestamp: itemTimestamp,
+      timestampUtc: new Date(itemTimestamp).toISOString(),
       url: it.url,
       category: analysisResult.category,
       impactSentiment: analysisResult.impactSentiment,
@@ -686,6 +724,39 @@ export async function fetchAndNormalizeNewsFree(
       if (sim > 0.68) {
         isDupe = true;
         accepted.tickers = Array.from(new Set([...accepted.tickers, ...item.tickers]));
+        if (!accepted.sources) {
+          accepted.sources = [{
+            name: accepted.source,
+            sourceType: accepted.sourceType,
+            url: accepted.url,
+            timestamp: accepted.timestamp,
+            authorityRank: getSourceAuthorityWeight(accepted.sourceType),
+          }];
+        }
+        const itemSources = item.sources && item.sources.length > 0 
+          ? item.sources 
+          : [{
+              name: item.source,
+              sourceType: item.sourceType,
+              url: item.url,
+              timestamp: item.timestamp,
+              authorityRank: getSourceAuthorityWeight(item.sourceType),
+            }];
+        for (const src of itemSources) {
+          if (!accepted.sources.some(s => s.name === src.name && s.sourceType === src.sourceType)) {
+            accepted.sources.push(src);
+          }
+        }
+        accepted.duplicateCount = (accepted.duplicateCount || 1) + (item.duplicateCount || 1);
+        accepted.earliestPublishedAt = Math.min(
+          accepted.earliestPublishedAt || accepted.timestamp,
+          item.earliestPublishedAt || item.timestamp
+        );
+        if (getSourceAuthorityWeight(item.sourceType) > getSourceAuthorityWeight(accepted.sourceType)) {
+          accepted.source = item.source;
+          accepted.sourceType = item.sourceType;
+          if (item.url) accepted.url = item.url;
+        }
         break;
       }
     }
@@ -792,15 +863,37 @@ export async function fetchAndNormalizeNews(
     combined = generateInstitutionalSeedFeed(query);
   }
 
-  // Normalization and Deduplication
+  // Normalization and Deduplication with multi-source provenance
   const hashIndexed = new Map<string, NormalizedNewsItem>();
 
   for (const raw of combined) {
     if (!raw.headline || raw.headline.length < 8) continue;
     const fp = fingerprint(raw.headline, raw.url);
+    const itemTimestamp = raw.timestamp || now;
+    const initialSource: NewsSourceAttribution = {
+      name: raw.source,
+      sourceType: raw.sourceType,
+      url: raw.url,
+      timestamp: itemTimestamp,
+      authorityRank: getSourceAuthorityWeight(raw.sourceType),
+    };
 
     if (hashIndexed.has(fp)) {
       const existing = hashIndexed.get(fp)!;
+      if (!existing.sources) {
+        existing.sources = [{
+          name: existing.source,
+          sourceType: existing.sourceType,
+          url: existing.url,
+          timestamp: existing.timestamp,
+          authorityRank: getSourceAuthorityWeight(existing.sourceType),
+        }];
+      }
+      if (!existing.sources.some(s => s.name === raw.source && s.sourceType === raw.sourceType)) {
+        existing.sources.push(initialSource);
+      }
+      existing.duplicateCount = (existing.duplicateCount || 1) + 1;
+      existing.earliestPublishedAt = Math.min(existing.earliestPublishedAt || existing.timestamp, itemTimestamp);
       if (getSourceAuthorityWeight(raw.sourceType) > getSourceAuthorityWeight(existing.sourceType)) {
         existing.source = raw.source;
         existing.sourceType = raw.sourceType;
@@ -811,7 +904,7 @@ export async function fetchAndNormalizeNews(
 
     const deterministic = analyzeDeterministic(raw);
     const tickers = extractTickers(`${raw.headline} ${raw.summary || ''} ${query}`);
-    const isFlash = deterministic.category === 'BREAKING' || (now - raw.timestamp < 120 * 1000);
+    const isFlash = deterministic.category === 'BREAKING' || (now - itemTimestamp < 120 * 1000);
 
     const item: NormalizedNewsItem = {
       id: `news-${fp.slice(0, 12)}`,
@@ -819,7 +912,11 @@ export async function fetchAndNormalizeNews(
       summary: raw.summary || '',
       source: raw.source,
       sourceType: raw.sourceType,
-      timestamp: raw.timestamp || now,
+      sources: [initialSource],
+      duplicateCount: 1,
+      earliestPublishedAt: itemTimestamp,
+      timestamp: itemTimestamp,
+      timestampUtc: new Date(itemTimestamp).toISOString(),
       url: raw.url,
       category: deterministic.category,
       impactSentiment: deterministic.impactSentiment,
@@ -843,6 +940,39 @@ export async function fetchAndNormalizeNews(
       if (sim > 0.68) {
         isDupe = true;
         accepted.tickers = Array.from(new Set([...accepted.tickers, ...item.tickers]));
+        if (!accepted.sources) {
+          accepted.sources = [{
+            name: accepted.source,
+            sourceType: accepted.sourceType,
+            url: accepted.url,
+            timestamp: accepted.timestamp,
+            authorityRank: getSourceAuthorityWeight(accepted.sourceType),
+          }];
+        }
+        const itemSources = item.sources && item.sources.length > 0 
+          ? item.sources 
+          : [{
+              name: item.source,
+              sourceType: item.sourceType,
+              url: item.url,
+              timestamp: item.timestamp,
+              authorityRank: getSourceAuthorityWeight(item.sourceType),
+            }];
+        for (const src of itemSources) {
+          if (!accepted.sources.some(s => s.name === src.name && s.sourceType === src.sourceType)) {
+            accepted.sources.push(src);
+          }
+        }
+        accepted.duplicateCount = (accepted.duplicateCount || 1) + (item.duplicateCount || 1);
+        accepted.earliestPublishedAt = Math.min(
+          accepted.earliestPublishedAt || accepted.timestamp,
+          item.earliestPublishedAt || item.timestamp
+        );
+        if (getSourceAuthorityWeight(item.sourceType) > getSourceAuthorityWeight(accepted.sourceType)) {
+          accepted.source = item.source;
+          accepted.sourceType = item.sourceType;
+          if (item.url) accepted.url = item.url;
+        }
         break;
       }
     }

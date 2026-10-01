@@ -16,7 +16,23 @@ export const TechnicalEconomicCalendar: React.FC<TechnicalEconomicCalendarProps>
   const { liveClock, geoTimeInfo, formatEventTime, formatEventDate } = useUserTimeZone();
   const [impactFilter, setImpactFilter] = useState<'HIGH' | 'MEDIUM_PLUS' | 'ALL'>('HIGH');
   const [currencyFilter, setCurrencyFilter] = useState<string>('ALL');
-  const [selectedWeekKey, setSelectedWeekKey] = useState<string>('2026-09-14');
+  const currentWeekMondayKey = useMemo(() => {
+    const d = new Date();
+    const dow = d.getUTCDay();
+    const diff = dow === 0 ? 1 : 1 - dow;
+    const mon = new Date(d);
+    mon.setUTCDate(d.getUTCDate() + diff);
+    return mon.toISOString().split('T')[0];
+  }, []);
+
+  const [selectedWeekKey, setSelectedWeekKey] = useState<string>(() => {
+    const d = new Date();
+    const dow = d.getUTCDay();
+    const diff = dow === 0 ? 1 : 1 - dow;
+    const mon = new Date(d);
+    mon.setUTCDate(d.getUTCDate() + diff);
+    return mon.toISOString().split('T')[0];
+  });
 
   // Fallback to client macro calendar if events prop not supplied
   const rawEvents = useMemo(() => {
@@ -34,13 +50,19 @@ export const TechnicalEconomicCalendar: React.FC<TechnicalEconomicCalendarProps>
     return mon.toISOString().split('T')[0];
   };
 
-  // Available trading weeks
+  // Available trading weeks derived from real events and current week
   const availableWeeks = useMemo(() => {
-    const map = new Map<string, { weekKey: string; label: string; shortLabel: string; isCurrent: boolean }>();
-    
-    // Ensure Sep 14 week is available
-    const weeksList = ['2026-09-07', '2026-09-14', '2026-09-21'];
-    for (const mondayKey of weeksList) {
+    const weekMondaysSet = new Set<string>();
+    if (currentWeekMondayKey) {
+      weekMondaysSet.add(currentWeekMondayKey);
+    }
+    for (const evt of rawEvents) {
+      const monKey = getEventWeekMonday(evt.timestamp);
+      weekMondaysSet.add(monKey);
+    }
+
+    const sortedMondays = Array.from(weekMondaysSet).sort();
+    return sortedMondays.map((mondayKey) => {
       const [y, m, d] = mondayKey.split('-').map(Number);
       const mon = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
       const fri = new Date(mon);
@@ -51,16 +73,25 @@ export const TechnicalEconomicCalendar: React.FC<TechnicalEconomicCalendarProps>
       const friDay = fri.getUTCDate();
       const year = mon.getUTCFullYear();
 
-      map.set(mondayKey, {
+      return {
         weekKey: mondayKey,
         label: `${monMonth} ${monDay} – ${monMonth === friMonth ? '' : friMonth + ' '}${friDay}, ${year}`,
         shortLabel: `${monMonth} ${monDay}–${friDay}`,
-        isCurrent: mondayKey === '2026-09-14',
-      });
-    }
+        isCurrent: mondayKey === currentWeekMondayKey,
+      };
+    });
+  }, [rawEvents, currentWeekMondayKey]);
 
-    return Array.from(map.values()).sort((a, b) => a.weekKey.localeCompare(b.weekKey));
-  }, []);
+  React.useEffect(() => {
+    if (availableWeeks.length > 0 && !availableWeeks.some((w) => w.weekKey === selectedWeekKey)) {
+      const current = availableWeeks.find((w) => w.isCurrent);
+      if (current) {
+        setSelectedWeekKey(current.weekKey);
+      } else if (availableWeeks[0]) {
+        setSelectedWeekKey(availableWeeks[0].weekKey);
+      }
+    }
+  }, [availableWeeks, selectedWeekKey]);
 
   const currentWeekIdx = availableWeeks.findIndex((w) => w.weekKey === selectedWeekKey);
   const canGoPrev = currentWeekIdx > 0;
@@ -254,13 +285,13 @@ export const TechnicalEconomicCalendar: React.FC<TechnicalEconomicCalendarProps>
           <div className="flex items-center gap-1.5 font-mono text-xs text-slate-900 font-bold flex-wrap">
             <CalendarDays className="w-3.5 h-3.5 text-emerald-700" />
             <span>Week: <strong>{availableWeeks[currentWeekIdx]?.label || selectedWeekKey}</strong></span>
-            {selectedWeekKey === '2026-09-14' ? (
+            {selectedWeekKey === currentWeekMondayKey ? (
               <span className="text-[10px] font-mono font-extrabold uppercase px-1.5 py-0.2 rounded bg-emerald-700 text-white shadow-2xs">
                 CURRENT WEEK
               </span>
             ) : (
               <span className="text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded bg-[#ded5c6] text-slate-700">
-                {selectedWeekKey < '2026-09-14' ? 'Past Week' : 'Next Week'}
+                {selectedWeekKey < currentWeekMondayKey ? 'Past Week' : 'Next Week'}
               </span>
             )}
             <span className="text-slate-500 font-normal text-[11px]">

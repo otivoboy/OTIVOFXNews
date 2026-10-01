@@ -147,6 +147,7 @@ export interface AssetImpact {
   confidence: number; // 0 to 100
   magnitude: 'HIGH' | 'MEDIUM' | 'LOW';
   expectedMove: string; // e.g. "+1.2% (~$30)" or "+45 pips"
+  structuredMove?: StructuredExpectedMove;
   transmissionRationale: string;
   invalidationTrigger: string;
   correlationRank: number; // 1 = highest primary correlation
@@ -316,6 +317,24 @@ export interface MacroConfirmationPillars {
   institutionalConsensus: string;
 }
 
+export type ExpectedMoveUnit = 'pips' | 'bps' | 'points' | 'USD/oz' | 'USD/bbl' | '%' | 'ticks';
+
+export interface StructuredExpectedMove {
+  min: number;
+  max: number;
+  unit: ExpectedMoveUnit;
+  formatted: string;
+  direction: 'UPSIDE' | 'DOWNSIDE' | 'TWO_WAY';
+}
+
+export interface NewsSourceAttribution {
+  name: string;
+  sourceType: 'BLOOMBERG' | 'REUTERS' | 'FT' | 'WSJ' | 'CNBC' | 'FOREXLIVE' | 'CENTRAL_BANK' | 'SQUAWK' | 'NEWSAPI' | 'SERPER' | 'RSS' | 'GOOGLE_NEWS_RSS';
+  url?: string;
+  timestamp: number;
+  authorityRank: number; // e.g. 100 for Bloomberg/Reuters, 85 for CNBC/FT
+}
+
 export interface DirectionSpikeItem {
   symbol: string;
   name: string;
@@ -326,6 +345,7 @@ export interface DirectionSpikeItem {
   directive: 'BUY' | 'SELL' | 'STRONG BUY' | 'STRONG SELL';
   action: TacticalAction;
   expectedMove: string;
+  structuredMove?: StructuredExpectedMove;
   targetZone: string;
   invalidationZone: string;
   playbookRule: string;
@@ -703,6 +723,7 @@ export interface MarketSymbol {
 
 export interface NewsItemAnalysis {
   expectedMove: string;
+  structuredMove?: StructuredExpectedMove;
   horizon: 'intraday' | '1-3 days' | '1-2 weeks';
   confidence: number; // 0.0 - 1.0
   rationale: string;
@@ -723,7 +744,11 @@ export interface NormalizedNewsItem {
   summary: string;
   source: string;
   sourceType: 'BLOOMBERG' | 'REUTERS' | 'FT' | 'WSJ' | 'CNBC' | 'FOREXLIVE' | 'CENTRAL_BANK' | 'SQUAWK' | 'NEWSAPI' | 'SERPER' | 'RSS' | 'GOOGLE_NEWS_RSS';
-  timestamp: number;
+  sources?: NewsSourceAttribution[];
+  duplicateCount?: number;
+  earliestPublishedAt?: number;
+  timestamp: number; // ms UTC
+  timestampUtc?: string; // ISO 8601 UTC string (e.g. 2026-09-14T12:30:00.000Z)
   url?: string;
   category: 'BREAKING' | 'CENTRAL_BANK' | 'MACRO_DATA' | 'FLOWS_FX' | 'GEOPOLITICAL';
   impactSentiment: 'HAWKISH' | 'DOVISH' | 'NEUTRAL' | 'HIGH_VOLATILITY';

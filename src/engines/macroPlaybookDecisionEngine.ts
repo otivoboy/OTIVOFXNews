@@ -11,6 +11,7 @@ import {
   MarketBias
 } from '../types';
 import { MACRO_KNOWLEDGE_TOPICS, MacroKnowledgeTopic } from '../data/macroKnowledgeBase';
+import { convertDirectionForPair, parseExpectedMove } from '../utils/directionHelper';
 
 /**
  * Maps an incoming EconomicEvent to the closest MacroKnowledgeTopic from the Playbook
@@ -81,21 +82,26 @@ export function calculateDirectionSpikeDecision(
   event: EconomicEvent,
   mathExp: MathematicalExpectation,
   confirmationPillars?: MacroConfirmationPillars,
-  existingSynthesis?: AiSynthesis
+  existingSynthesis?: AiSynthesis,
+  liveBullishOverride?: boolean
 ): DirectionSpikeDecision {
   const currency = (event.currency || 'USD').toUpperCase();
   const topic = getMatchingMacroPlaybookTopic(event);
   const topicTitle = topic ? topic.title : `${currency} Macro Release`;
 
   // Determine overall directional bias for the event currency
-  const isHawkishSkew = mathExp.skewDirection === 'UPSIDE_BEAT' || 
-                        mathExp.probabilities.upsideBeatPercent > 45 || 
-                        mathExp.netExpectedSurpriseDelta > 0 ||
-                        (confirmationPillars && confirmationPillars.overallConfirmationScore >= 60);
+  const isHawkishSkew = liveBullishOverride ?? (
+    mathExp.skewDirection === 'UPSIDE_BEAT' || 
+    mathExp.probabilities.upsideBeatPercent > 45 || 
+    mathExp.netExpectedSurpriseDelta > 0 ||
+    (confirmationPillars && confirmationPillars.overallConfirmationScore >= 60)
+  );
 
-  const isDovishSkew = mathExp.skewDirection === 'DOWNSIDE_MISS' || 
-                       mathExp.probabilities.downsideMissPercent > 45 || 
-                       mathExp.netExpectedSurpriseDelta < 0;
+  const isDovishSkew = liveBullishOverride === false ? true : (liveBullishOverride === true ? false : (
+    mathExp.skewDirection === 'DOWNSIDE_MISS' || 
+    mathExp.probabilities.downsideMissPercent > 45 || 
+    mathExp.netExpectedSurpriseDelta < 0
+  ));
 
   const bias: 'BULLISH' | 'BEARISH' | 'VOLATILITY_WHIPSAW' | 'NEUTRAL' = 
     isHawkishSkew ? 'BULLISH' : isDovishSkew ? 'BEARISH' : 'VOLATILITY_WHIPSAW';
@@ -129,6 +135,8 @@ export function calculateDirectionSpikeDecision(
       : (isStrongConviction ? 'STRONG SELL' : 'SELL');
     const action: TacticalAction = isBullishSpike ? 'LONG' : 'SHORT';
 
+    const structuredMove = parseExpectedMove(pipsMove, category, symbol);
+
     affectedPairs.push({
       symbol,
       name,
@@ -139,6 +147,7 @@ export function calculateDirectionSpikeDecision(
       directive,
       action,
       expectedMove: pipsMove,
+      structuredMove,
       targetZone: target,
       invalidationZone: invalidation,
       playbookRule: rule,

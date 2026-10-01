@@ -127,7 +127,7 @@ export const AiSynthesisCard: React.FC<AiSynthesisCardProps> = ({ aiSynthesis })
                         </span>
                       </div>
                       <div className="mt-1 flex items-center justify-between text-[10px]">
-                        <span className="font-bold text-slate-700">{pair.expectedMove}</span>
+                        <span className="font-bold text-slate-700">{pair.structuredMove?.formatted || pair.expectedMove}</span>
                         <span className="text-slate-500">{pair.confidence}% Conf</span>
                       </div>
                       <div className="mt-1 text-[9px] text-slate-600 truncate" title={pair.playbookRule}>

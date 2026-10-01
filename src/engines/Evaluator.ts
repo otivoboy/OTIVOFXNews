@@ -13,6 +13,7 @@ import {
   calculateDirectionSpikeDecision, 
   generateInstitutionalSynthesisFromPlaybook 
 } from './macroPlaybookDecisionEngine';
+import { parseExpectedMove } from '../utils/directionHelper';
 
 /**
  * Universal Currency Transmission & Direct/Inverse Base-Quote Pair Resolver
@@ -305,11 +306,14 @@ export class MacroEvaluator {
 
       const isCurrentStandAside = asset.action === 'STAND ASIDE' || asset.action === 'FADE SPIKES' || isUpcoming;
 
+      const structuredMove = asset.structuredMove || parseExpectedMove(asset.expectedMove, asset.category, asset.symbol);
+
       return {
         ...asset,
         actionDirective: resolved.directive,
         action: isCurrentStandAside ? resolved.action : asset.action,
         bias: isUpcoming ? resolved.bias : (asset.bias === 'WATCH' ? resolved.bias : asset.bias),
+        structuredMove,
         upsideScenario: enhancedUpside,
         downsideScenario: enhancedDownside,
       };
@@ -320,7 +324,8 @@ export class MacroEvaluator {
       event,
       mathExpectation,
       result.confirmationPillars,
-      result.aiSynthesis
+      result.aiSynthesis,
+      isUpcoming ? undefined : isBullishForEventCurrency
     );
 
     // Merge any missing affected market pairs from the Playbook Decision Engine into assetImpacts
@@ -337,6 +342,7 @@ export class MacroEvaluator {
           confidence: pair.confidence,
           magnitude: 'HIGH',
           expectedMove: pair.expectedMove,
+          structuredMove: pair.structuredMove || parseExpectedMove(pair.expectedMove, pair.category, pair.symbol),
           transmissionRationale: pair.playbookRule,
           invalidationTrigger: pair.invalidationZone,
           correlationRank: result.assetImpacts.length + 1,

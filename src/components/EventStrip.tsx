@@ -45,7 +45,14 @@ export const EventStrip: React.FC<EventStripProps> = ({
 }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('CALENDAR');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('ALL');
-  const [selectedWeekKey, setSelectedWeekKey] = useState<string>('2026-09-14'); // Monday of active trading week
+  const [selectedWeekKey, setSelectedWeekKey] = useState<string>(() => {
+    const d = new Date();
+    const dow = d.getUTCDay();
+    const diff = dow === 0 ? 1 : 1 - dow;
+    const mon = new Date(d);
+    mon.setUTCDate(d.getUTCDate() + diff);
+    return mon.toISOString().split('T')[0];
+  });
   const [selectedDayKey, setSelectedDayKey] = useState<string>('ALL'); // 'ALL' or 'YYYY-MM-DD'
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isCalendarExpanded, setIsCalendarExpanded] = useState<boolean>(true);
@@ -259,6 +266,18 @@ export const EventStrip: React.FC<EventStripProps> = ({
     return availableWeeks.find((w) => w.weekKey === selectedWeekKey) ||
       availableWeeks.find((w) => w.isCurrent) ||
       availableWeeks[0];
+  }, [availableWeeks, selectedWeekKey]);
+
+  // Keep selectedWeekKey valid when availableWeeks loads
+  useEffect(() => {
+    if (availableWeeks.length > 0 && !availableWeeks.some((w) => w.weekKey === selectedWeekKey)) {
+      const current = availableWeeks.find((w) => w.isCurrent);
+      if (current) {
+        setSelectedWeekKey(current.weekKey);
+      } else if (availableWeeks[0]) {
+        setSelectedWeekKey(availableWeeks[0].weekKey);
+      }
+    }
   }, [availableWeeks, selectedWeekKey]);
 
   // Navigation handlers
