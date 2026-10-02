@@ -715,15 +715,22 @@ export const EventStrip: React.FC<EventStripProps> = ({
                           const hasForecast = event.forecast !== null && event.forecast !== undefined && event.forecast !== '' && (event.forecast as any) !== '--';
                           const hasPrevious = event.previous !== null && event.previous !== undefined && event.previous !== '' && (event.previous as any) !== '--';
 
-                          const formatActual = typeof event.actual === 'number'
-                            ? `${event.actual > 0 && event.unit === '%' ? '+' : ''}${event.actual}${event.unit || ''}`
-                            : String(event.actual);
-                          const formatForecast = typeof event.forecast === 'number'
-                            ? `${event.forecast > 0 && event.unit === '%' ? '+' : ''}${event.forecast}${event.unit || ''}`
-                            : String(event.forecast);
-                          const formatPrevious = typeof event.previous === 'number'
-                            ? `${event.previous > 0 && event.unit === '%' ? '+' : ''}${event.previous}${event.unit || ''}`
-                            : String(event.previous);
+                          const formatMetricValue = (val: number | string | null | undefined, unit?: string | null): string => {
+                            if (val === null || val === undefined || val === '' || val === '--' || (val as any) === 'null') {
+                              return '--';
+                            }
+                            const str = String(val).trim();
+                            if (str === '' || str === '--') return '--';
+                            const u = unit || '';
+                            if (u && !str.endsWith(u) && !str.includes(u)) {
+                              return `${str}${u}`;
+                            }
+                            return str;
+                          };
+
+                          const formatActual = formatMetricValue(event.actual, event.unit);
+                          const formatForecast = formatMetricValue(event.forecast, event.unit);
+                          const formatPrevious = formatMetricValue(event.previous, event.unit);
 
                           // Forex Factory Standard Beat / Miss Evaluation
                           const isBeat = hasActual && hasForecast && Number(event.actual) > Number(event.forecast);
@@ -994,14 +1001,14 @@ export const EventStrip: React.FC<EventStripProps> = ({
                                 : 'bg-[#faf8f4] text-slate-400 border-[#ded5c6]'
                             }`}>
                               Act: {event.actual !== null && event.actual !== undefined
-                                ? `${event.actual > 0 && event.unit === '%' ? '+' : ''}${event.actual}${event.unit || ''}`
+                                ? `${event.actual}${event.unit || ''}`
                                 : '--'}
                             </span>
                             <span className="text-slate-600 text-[10px]">
-                              Frc: <span className="text-slate-900 font-semibold">{event.forecast !== null && event.forecast !== undefined ? `${event.forecast > 0 && event.unit === '%' ? '+' : ''}${event.forecast}${event.unit || ''}` : '--'}</span>
+                              Frc: <span className="text-slate-900 font-semibold">{event.forecast !== null && event.forecast !== undefined && (event.forecast as any) !== '--' ? `${event.forecast}${event.unit || ''}` : '--'}</span>
                             </span>
                             <span className="text-slate-400 text-[10px]">
-                              Prev: <span>{event.previous !== null && event.previous !== undefined ? `${event.previous > 0 && event.unit === '%' ? '+' : ''}${event.previous}${event.unit || ''}` : '--'}</span>
+                              Prev: <span>{event.previous !== null && event.previous !== undefined && (event.previous as any) !== '--' ? `${event.previous}${event.unit || ''}` : '--'}</span>
                             </span>
                           </div>
 

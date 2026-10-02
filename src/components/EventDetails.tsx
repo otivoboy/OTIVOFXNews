@@ -140,7 +140,7 @@ export const EventDetails: React.FC<EventDetailsProps> = ({
                 ? 'text-slate-900 font-bold'
                 : 'text-slate-400'
             }`}>
-              {actualVal !== null ? `${actualVal > 0 && event.unit === '%' ? '+' : ''}${actualVal}${event.unit || ''}` : isUpcoming ? (
+              {actualVal !== null ? `${actualVal}${event.unit || ''}` : isUpcoming ? (
                 <span className="text-amber-700 text-xs font-mono font-medium">
                   Scheduled
                 </span>
@@ -151,7 +151,7 @@ export const EventDetails: React.FC<EventDetailsProps> = ({
           <div className="bg-[#faf8f4] border border-[#e2dcd2] rounded-lg p-2.5">
             <span className="text-[10px] uppercase font-bold text-slate-500">Consensus Forecast</span>
             <div className="text-lg font-mono font-bold text-sky-800 mt-0.5">
-              {forecastVal !== null ? `${forecastVal > 0 && event.unit === '%' ? '+' : ''}${forecastVal}${event.unit || ''}` : '--'}
+              {forecastVal !== null ? `${forecastVal}${event.unit || ''}` : '--'}
             </div>
           </div>
 
@@ -175,7 +175,7 @@ export const EventDetails: React.FC<EventDetailsProps> = ({
           <div className="bg-[#faf8f4] border border-[#e2dcd2] rounded-lg p-2.5">
             <span className="text-[10px] uppercase font-bold text-slate-500">Prior Period</span>
             <div className="text-lg font-mono font-bold text-slate-700 mt-0.5">
-              {event.previous !== null ? `${event.previous > 0 && event.unit === '%' ? '+' : ''}${event.previous}${event.unit || ''}` : '--'}
+              {event.previous !== null && event.previous !== undefined && (event.previous as any) !== '--' ? `${event.previous}${event.unit || ''}` : '--'}
             </div>
           </div>
         </div>

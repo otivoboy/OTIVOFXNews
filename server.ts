@@ -414,6 +414,22 @@ async function fetchForexFactoryDirectFeed(): Promise<EconomicEvent[] | null> {
               const isImminent = !isPast && (eventTime - now < 30 * 60 * 1000);
               const status: EconomicEvent['status'] = isPast ? 'RELEASED' : isImminent ? 'IMMINENT' : 'UPCOMING';
 
+              const rawUnitStr = `${normalized.forecast || ''} ${normalized.previous || ''} ${normalized.actual || ''}`.toLowerCase();
+              let unit = '';
+              if (rawUnitStr.includes('%') || name.includes('cpi') || name.includes('inflation') || name.includes('rate') || name.includes('earnings') || name.includes('gdp') || name.includes('spending') || name.includes('orders')) {
+                unit = '%';
+              } else if (rawUnitStr.includes('k') || name.includes('claims') || name.includes('payroll') || name.includes('employment') || name.includes('unemployment change')) {
+                unit = 'K';
+              } else if (rawUnitStr.includes('m') || name.includes('jolts') || name.includes('inventories')) {
+                unit = 'M';
+              } else if (rawUnitStr.includes('b') || name.includes('trade balance')) {
+                unit = 'B';
+              } else if (name.includes('pmi') || name.includes('index') || name.includes('sentiment') || name.includes('confidence') || name.includes('prices')) {
+                unit = '';
+              } else if (rawUnitStr.includes('%')) {
+                unit = '%';
+              }
+
               return {
                 id: normalized.id ? `ff-live-${normalized.id}` : `ff-live-${country.toLowerCase()}-${code.toLowerCase()}-${idx}`,
                 code,
@@ -430,7 +446,7 @@ async function fetchForexFactoryDirectFeed(): Promise<EconomicEvent[] | null> {
                 actual: actualNum,
                 forecast: forecastNum,
                 previous: previousNum,
-                unit: (String(normalized.forecast).includes('%') || String(normalized.previous).includes('%')) ? '%' : ((String(normalized.forecast).includes('k') || String(normalized.forecast).includes('K')) ? 'K' : '%'),
+                unit,
                 description: `Live Forex Factory official news release: ${title} (${country}).`,
               };
             });
@@ -563,7 +579,7 @@ Return ONLY a valid JSON array of objects with strict UTC ISO formatted dates (Y
   }
 ]`;
 
-    const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-3.7-flash"];
+    const modelsToTry = ["gemini-3.8-flash", "gemini-flash-latest"];
     let response: any = null;
 
     for (const model of modelsToTry) {
@@ -685,10 +701,21 @@ Return ONLY a valid JSON array of objects with strict UTC ISO formatted dates (Y
       const isImminent = !isPast && (eventTimestamp - now < 30 * 60 * 1000 && eventTimestamp > now);
       const status: EconomicEvent['status'] = isPast ? 'RELEASED' : isImminent ? 'IMMINENT' : 'UPCOMING';
 
-      let unit = '%';
-      if (item.forecast && (item.forecast.toLowerCase().includes('k') || item.forecast.toLowerCase().includes('k'))) unit = 'K';
-      else if (item.forecast && item.forecast.toLowerCase().includes('m')) unit = 'M';
-      else if (item.forecast && item.forecast.includes('%')) unit = '%';
+      const combinedUnitStr = `${item.forecast || ''} ${item.previous || ''} ${item.actual || ''}`.toLowerCase();
+      let unit = '';
+      if (combinedUnitStr.includes('%') || name.includes('cpi') || name.includes('inflation') || name.includes('rate') || name.includes('earnings') || name.includes('gdp') || name.includes('spending') || name.includes('orders')) {
+        unit = '%';
+      } else if (combinedUnitStr.includes('k') || name.includes('claims') || name.includes('payroll') || name.includes('employment') || name.includes('unemployment change')) {
+        unit = 'K';
+      } else if (combinedUnitStr.includes('m') || name.includes('jolts') || name.includes('inventories')) {
+        unit = 'M';
+      } else if (combinedUnitStr.includes('b') || name.includes('trade balance')) {
+        unit = 'B';
+      } else if (name.includes('pmi') || name.includes('index') || name.includes('sentiment') || name.includes('confidence') || name.includes('prices')) {
+        unit = '';
+      } else if (combinedUnitStr.includes('%')) {
+        unit = '%';
+      }
 
       return {
         id: `ff-real-${curr.toLowerCase()}-${code.toLowerCase()}-${idx}`,
